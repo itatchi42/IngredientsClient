@@ -1,5 +1,5 @@
 # Description
-Using Serverless, React-Redux, AWS, and Bootstrap to create a client to search through a massive DB of ingredients
+Using Serverless, React-Redux (JavaScript), AWS, and Bootstrap, Python to create a client to search through a massive DB of ingredients
 
 # How to use
 Start the Serverless backend with
