@@ -1,0 +1,81 @@
+service: candidate-service
+
+frameworkVersion: ">=1.1.0 <2.0.0"
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  stage: dev
+  region: us-east-1
+  environment:
+    INGREDIENT_TABLE: ${self:service}-${opt:stage, self:provider.stage}
+    #CANDIDATE_EMAIL_TABLE: "candidate-email-${opt:stage, self:provider.stage}"
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+      Resource: "*"
+functions:
+  ingredientSubmission:
+    handler: api/ingredient.submit
+    memorySize: 128
+    description: Add ingredient information.
+    events:
+      - http: 
+          path: add-ingredients
+          method: post
+
+  listIngredients:
+    handler: api/ingredient.list
+    memorySize: 128
+    description: Fetch ingredient information.
+    events:
+      - http: 
+          path: all-ingredients
+          method: get
+  ingredientDetails:
+    handler: api/ingredient.get
+    events:
+      - http:
+          path: ingredient/{key}
+          method: get
+  fuzzyMatch:
+    handler: api/ingredient.fuzzy
+    events:
+      - http:
+          path: fuzzy-search/{key}
+          method: get
+
+
+resources:
+  Resources:
+    IngredientsDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: key
+            AttributeType: "S"   
+        KeySchema:
+          -
+            AttributeName: key
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5  # <---- To change to ONE(1) once I deploy to AWS
+          WriteCapacityUnits: 5 # <---- To change to ONE(1) once I deploy to AWS
+        StreamSpecification:
+          StreamViewType: "NEW_AND_OLD_IMAGES"
+        TableName: ${self:provider.environment.INGREDIENT_TABLE}
+plugins:
+  - serverless-dynamodb-local
+  - serverless-offline
+custom:
+  dynamodb:
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true # create tables on start
